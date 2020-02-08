@@ -7,6 +7,7 @@ const authReducer = (state, action) => {
 	switch (action.type) {
 		case 'add_error':
 			return { ...state, errorMessage: action.payload };
+		case 'signin':
 		case 'signup':
 			//* we do not want to update state on signup
 			//* state is meant to start from scratch
@@ -32,10 +33,15 @@ const signup = (dispatch) => {
 };
 
 const signin = (dispatch) => {
-	return ({ email, password }) => {
-		//* make api request
-		//* handle success by updating state
-		//* handle failure by showing error message
+	return async ({ email, password }) => {
+		try {
+			const response = await trackerApi.post('/signin', { email, password });
+			await AsyncStorage.setItem('token', response.data.token);
+			dispatch({ type: 'signin', payload: response.data.token });
+			navigate('TrackList');
+		} catch (error) {
+			dispatch({ type: 'add_error', payload: 'Something went wrong with Signin' });
+		}
 	};
 };
 
