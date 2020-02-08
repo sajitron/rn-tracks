@@ -8,12 +8,13 @@ const authReducer = (state, action) => {
 		case 'add_error':
 			return { ...state, errorMessage: action.payload };
 		case 'signin':
-		case 'signup':
 			//* we do not want to update state on signup
 			//* state is meant to start from scratch
 			return { errorMessage: '', token: action.payload };
 		case 'clear_error_message':
 			return { ...state, errorMessage: '' };
+		case 'signout':
+			return { token: null, errorMessage: '' };
 		default:
 			return state;
 	}
@@ -22,10 +23,11 @@ const authReducer = (state, action) => {
 const autoSignin = (dispatch) => async () => {
 	const token = await AsyncStorage.getItem('token');
 	if (token) {
-		dispatch({ type: 'sign_in', payload: token });
+		dispatch({ type: 'signin', payload: token });
 		navigate('TrackList');
+	} else {
+		navigate('Signup');
 	}
-	navigate('Signup');
 };
 
 const clearErrorMessage = (dispatch) => {
@@ -41,7 +43,7 @@ const signup = (dispatch) => {
 			const response = await trackerApi.post('/signup', { email, password });
 			await AsyncStorage.setItem('token', response.data.token);
 			//* update token state
-			dispatch({ type: 'signup', payload: response.data.token });
+			dispatch({ type: 'signin', payload: response.data.token });
 			navigate('TrackList');
 		} catch (error) {
 			dispatch({ type: 'add_error', payload: 'Something went wrong' });
@@ -63,8 +65,10 @@ const signin = (dispatch) => {
 };
 
 const signout = (dispatch) => {
-	return () => {
-		//* sign out
+	return async () => {
+		await AsyncStorage.removeItem('token');
+		dispatch({ type: 'signout' });
+		navigate('loginFlow');
 	};
 };
 
